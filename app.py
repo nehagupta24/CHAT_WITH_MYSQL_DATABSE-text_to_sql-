@@ -8,21 +8,20 @@ from langchain.chat_models import ChatOpenAI
 from langchain_community.utilities import SQLDatabase
 from langchain_core.prompts import ChatPromptTemplate
 
-# Load environment variables
 load_dotenv()
 openai_api_key = os.getenv("OPENAI_API_KEY")
 
-# --- MySQL Connection ---
+
 def connectDatabase(username, port, host, password, database):
     encoded_password = quote_plus(password)
     mysql_uri = f"mysql+mysqlconnector://{username}:{encoded_password}@{host}:{port}/{database}"
     st.session_state.db = SQLDatabase.from_uri(mysql_uri)
 
-# --- Clean SQL from markdown formatting ---
+
 def cleanSQL(query):
     return query.replace("```sql", "").replace("```", "").strip()
 
-# --- Run SQL query and get rows + columns ---
+
 def runQuery(query):
     if not st.session_state.db:
         return "Please connect to database", []
@@ -39,14 +38,14 @@ def runQuery(query):
         else:
             return result.rowcount, []
 
-# --- Get DB Schema ---
+
 def getDatabaseSchema():
     return st.session_state.db.get_table_info() if st.session_state.db else "Please connect to database"
 
-# --- LLM Setup ---
+
 llm = ChatOpenAI(model="gpt-4", api_key=openai_api_key)
 
-# --- Generate SQL from question using schema and memory ---
+
 def getQueryFromLLM(question):
     chat_history = "\n".join([f"{chat['role'].capitalize()}: {chat['content']}" for chat in st.session_state.chat])
     template = """
@@ -74,7 +73,7 @@ SQL Query:
     })
     return response.content.strip()
 
-# --- Convert result to natural response ---
+
 def getResponseForQueryResult(question, query, result):
     template2 = """
 You are a data assistant. Based on the database schema, SQL query, and query result, write a natural language answer.
@@ -98,15 +97,14 @@ Natural Language Answer:
     })
     return response.content.strip()
 
-# --- Streamlit UI ---
 st.set_page_config(page_title="💬 Chat with MySQL DB", page_icon="🧠", layout="wide")
 st.title("💬 AI-Powered MySQL Assistant")
 st.markdown("Type a natural language question below to interact with your MySQL database.")
 
-# --- Chat input ---
+
 question = st.chat_input("Ask your MySQL database anything", key="chat_input")
 
-# --- Session State ---
+
 if "chat" not in st.session_state:
     st.session_state.chat = []
 if "query_history" not in st.session_state:
@@ -114,7 +112,7 @@ if "query_history" not in st.session_state:
 if "chat_tables" not in st.session_state:
     st.session_state.chat_tables = []
 
-# --- Process question ---
+
 if question:
     if "db" not in st.session_state:
         st.error("Please connect to the database first.")
@@ -145,7 +143,7 @@ if question:
             st.session_state.chat.append({"role": "assistant", "content": f"❌ Error: {str(e)}"})
             st.session_state.chat_tables.append(pd.DataFrame({"Error": [str(e)]}))
 
-# --- Display chat messages ---
+
 for i, chat in enumerate(st.session_state.chat):
     with st.chat_message(chat['role']):
         st.markdown(chat['content'])
@@ -156,7 +154,7 @@ for i, chat in enumerate(st.session_state.chat):
             if i < len(st.session_state.chat_tables):
                 st.dataframe(st.session_state.chat_tables[i], use_container_width=True)
 
-# --- Sidebar ---
+
 with st.sidebar:
     st.markdown("### 🛠️ MySQL Connection")
     st.text_input("📥 Host", key="db_host", value="e.g., 127.0.0.1")
