@@ -1,0 +1,13 @@
+streamlit
+langchain-core
+langchain-openai
+langchain-community
+pymysql  # Required if you connect to MySQL databases
+streamlit
+pandas
+mysql-connector-python
+chromadb
+langchain
+langchain-community
+langchain-openai
+python-dotenv
